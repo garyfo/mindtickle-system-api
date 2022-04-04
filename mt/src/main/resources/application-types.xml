@@ -1,0 +1,115 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<types:mule xmlns:types="http://www.mulesoft.org/schema/mule/types">
+  <types:catalog>
+    <types:type name="Order" format="json">
+      <types:shape format="weave" example="examples/Order-1.json"><![CDATA[%dw 2.0
+
+type Order = {|
+  poNumber: Number {"typeId": "int"}, 
+  signatureRequiredFlag: Boolean, 
+  shipInstructions: String, 
+  giftWrapFlag: Boolean, 
+  giftWrapMessage: String, 
+  currencyCode: String, 
+  subTotal: Number {"typeId": "double"}, 
+  customerId: String
+|} {"example": "{\\\"poNumber\\\":123461,\\\"signatureRequiredFlag\\\":false,\\\"shipInstructions\\\":\\\"Don't break it\\\",\\\"giftWrapFlag\\\":true,\\\"giftWrapMessage\\\":\\\"You rock!\\\",\\\"currencyCode\\\":\\\"USD\\\",\\\"subTotal\\\":41.5,\\\"customerId\\\":\\\"a003k00000TudZ7AAJ\\\"}"}
+
+]]></types:shape>
+    </types:type>
+    <types:type name="Customer" format="json">
+      <types:shape format="weave" example="examples/Customer-2.json"><![CDATA[%dw 2.0
+
+type Customer = {|
+  id: String, 
+  firstName: String, 
+  lastName: String, 
+  address: String, 
+  email: String, 
+  phone: String
+|} {"example": "{\\\"id\\\":\\\"1\\\",\\\"firstName\\\":\\\"John\\\",\\\"lastName\\\":\\\"Doe\\\",\\\"address\\\":\\\"1234 Main St San Jose 12345\\\",\\\"email\\\":\\\"john.doe@gmail.com\\\",\\\"phone\\\":\\\"123-123-1234\\\"}"}
+
+]]></types:shape>
+    </types:type>
+    <types:type name="Item" format="json">
+      <types:shape format="weave" example="examples/Item.json"><![CDATA[%dw 2.0
+
+type Item = {|
+  id: String, 
+  category: String, 
+  quantity: Number {"typeId": "int"}, 
+  size: String, 
+  orderId: String
+|} {"example": "{\\\"id\\\":\\\"34567\\\",\\\"category\\\":\\\"Hoodie\\\",\\\"quantity\\\":3,\\\"size\\\":\\\"M\\\",\\\"orderId\\\":\\\"a003k00000TudZ7AAJ\\\"}"}
+
+]]></types:shape>
+    </types:type>
+    <types:type name="CustomerNoID" format="json">
+      <types:shape format="weave" example="examples/CustomerNoID.json"><![CDATA[%dw 2.0
+
+type CustomerNoID = {|
+  firstName: String, 
+  lastName: String, 
+  address: String, 
+  email: String, 
+  phone: String
+|} {"example": "{\\\"firstName\\\":\\\"John\\\",\\\"lastName\\\":\\\"Doe\\\",\\\"address\\\":\\\"1234 Main St San Jose 12345\\\",\\\"email\\\":\\\"john.doe@gmail.com\\\",\\\"phone\\\":\\\"123-123-1234\\\"}"}
+
+]]></types:shape>
+    </types:type>
+  </types:catalog>
+  <types:enrichment select="#f125df3e-b601-4502-9d14-961ccb19bb66">
+    <types:processor-declaration>
+      <types:output-event>
+        <types:message>
+          <types:payload type="Order[]"/>
+        </types:message>
+      </types:output-event>
+    </types:processor-declaration>
+  </types:enrichment>
+  <types:enrichment select="#944848f2-d9f1-4226-abac-a931914726c1">
+    <types:processor-declaration>
+      <types:input-event>
+        <types:message>
+          <types:payload type="Order"/>
+        </types:message>
+      </types:input-event>
+    </types:processor-declaration>
+  </types:enrichment>
+  <types:enrichment select="#6b8eac32-19c0-4298-bbb2-dc8cf3785060">
+    <types:processor-declaration>
+      <types:output-event>
+        <types:message>
+          <types:payload type="Customer"/>
+        </types:message>
+      </types:output-event>
+    </types:processor-declaration>
+  </types:enrichment>
+  <types:enrichment select="#fe3d4cca-84c5-4292-9307-75ed3cc0d818">
+    <types:processor-declaration>
+      <types:input-event>
+        <types:message>
+          <types:payload type="CustomerNoID"/>
+        </types:message>
+      </types:input-event>
+    </types:processor-declaration>
+  </types:enrichment>
+  <types:enrichment select="#aaab2aba-d188-4a70-9665-59938c49bb68">
+    <types:processor-declaration>
+      <types:input-event>
+        <types:message>
+          <types:payload type="Item"/>
+        </types:message>
+      </types:input-event>
+    </types:processor-declaration>
+  </types:enrichment>
+  <types:enrichment select="#949de731-bcbc-4d2a-9bda-21fa84794c3c">
+    <types:processor-declaration>
+      <types:output-event>
+        <types:message>
+          <types:payload type="Item"/>
+        </types:message>
+      </types:output-event>
+    </types:processor-declaration>
+  </types:enrichment>
+</types:mule>

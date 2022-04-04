@@ -1,0 +1,101 @@
+#%RAML 1.0
+title: MT
+description: MindTickle module
+
+types:
+  Customer: !include data-types/Customer.raml
+  Item: !include data-types/Item.raml
+  Order:  !include data-types/Order.raml
+
+traits:
+  client-id-required:
+    headers:
+      client_id:
+        type: string
+      client_secret:
+        type: string
+    responses:
+      401:
+        description: Unauthorized, The client_id or client_secret are not valid or the client does not have access.
+      429:
+        description: The client used all of its request quota for the current period.
+      500:
+        description: An error occurred, see the specific message (Only if it is a WSDL endpoint).
+      503:
+        description: Contracts Information Unreachable.
+
+/items:
+  displayName: Item
+  description: the Items
+  is:
+    - client-id-required
+  get:
+    displayName: Get All items
+    description: Retrieves a list of all items
+
+    responses:
+      200:
+        body:
+          application/json:
+            type: Item[]
+  post:
+    displayName: Add an items
+    description: Add a new item, return its ID.
+    body:
+      application/json:
+        type: Item
+    responses:
+      201:
+        body:
+          application/json:
+            example:
+              message:  a003k00000TudZ7AAJ
+            
+    
+/orders:
+  is:
+    - client-id-required
+  get:
+    displayName: Get All orders
+    description: Retrieves a list of all orders
+    responses:
+      200:
+        body:
+          application/json:
+            type: Item[]
+  post:
+    displayName: Add an order
+    description: Add a new order, return its ID
+    body:
+      application/json:
+        type: Order
+    responses:
+      201:
+        body:
+          application/json:
+            example:
+              message:  a003k00000TudZ7AAJ
+
+/customers:
+  is:
+    - client-id-required
+  get:
+    displayName: Get All customers
+    description: Retrieves a list of all customers
+    responses:
+      200:
+        body:
+          application/json:
+            type: Customer[]
+  post:
+    displayName: Add a customer
+    description: Add a new customer, return its ID
+    body:
+      application/json:
+        type: Customer
+    responses:
+      201:
+        body:
+          application/json:
+            example:
+              message:  a003k00000TudZ7AAJ

@@ -1,0 +1,333 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mule xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:apikit="http://www.mulesoft.org/schema/mule/mule-apikit" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:salesforce="http://www.mulesoft.org/schema/mule/salesforce" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd http://www.mulesoft.org/schema/mule/mule-apikit http://www.mulesoft.org/schema/mule/mule-apikit/current/mule-apikit.xsd http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd  http://www.mulesoft.org/schema/mule/salesforce http://www.mulesoft.org/schema/mule/salesforce/current/mule-salesforce.xsd">
+    <apikit:config name="mt-config" api="mt.raml" outboundHeadersMapName="outboundHeaders" httpStatusVarName="httpStatus" />
+    <flow name="mt-main">
+        <http:listener config-ref="mt-httpListenerConfig" path="/api/*">
+            <http:response statusCode="#[vars.httpStatus default 200]">
+                <http:headers>#[vars.outboundHeaders default {}]</http:headers>
+            </http:response>
+            <http:error-response statusCode="#[vars.httpStatus default 500]">
+                <http:body>#[payload]</http:body>
+                <http:headers>#[vars.outboundHeaders default {}]</http:headers>
+            </http:error-response>
+        </http:listener>
+        <apikit:router config-ref="mt-config" />
+        <error-handler>
+            <on-error-propagate type="APIKIT:BAD_REQUEST">
+                <ee:transform>
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Bad request"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">400</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+            <on-error-propagate type="APIKIT:NOT_FOUND">
+                <ee:transform>
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Resource not found"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">404</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+            <on-error-propagate type="APIKIT:METHOD_NOT_ALLOWED">
+                <ee:transform>
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Method not allowed"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">405</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+            <on-error-propagate type="APIKIT:NOT_ACCEPTABLE">
+                <ee:transform>
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Not acceptable"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">406</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+            <on-error-propagate type="APIKIT:UNSUPPORTED_MEDIA_TYPE">
+                <ee:transform>
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Unsupported media type"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">415</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+            <on-error-propagate type="APIKIT:NOT_IMPLEMENTED">
+                <ee:transform>
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Not Implemented"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">501</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+        </error-handler>
+    </flow>
+    <flow name="mt-console">
+        <http:listener config-ref="mt-httpListenerConfig" path="/console/*">
+            <http:response statusCode="#[vars.httpStatus default 200]">
+                <http:headers>#[vars.outboundHeaders default {}]</http:headers>
+            </http:response>
+            <http:error-response statusCode="#[vars.httpStatus default 500]">
+                <http:body>#[payload]</http:body>
+                <http:headers>#[vars.outboundHeaders default {}]</http:headers>
+            </http:error-response>
+        </http:listener>
+        <apikit:console config-ref="mt-config" />
+        <error-handler>
+            <on-error-propagate type="APIKIT:NOT_FOUND">
+                <ee:transform>
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Resource not found"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">404</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+        </error-handler>
+    </flow>
+    <flow name="get:\customers:mt-config">
+		<salesforce:query doc:name="Query" doc:id="6f8e35dd-44c2-4892-8516-eba55659f900" config-ref="Salesforce_Config" >
+			<salesforce:salesforce-query ><![CDATA[SELECT id, address__c,  firstName__c, lastName__c, email__c, phone__c FROM Customer__c]]></salesforce:salesforce-query>
+		</salesforce:query>
+		<ee:transform doc:name="Transform Message" doc:id="6b8eac32-19c0-4298-bbb2-dc8cf3785060">
+            <ee:message>
+                <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+payload map ( payload01 , indexOfPayload01 ) -> {
+	id: payload01.Id default "",
+	firstName: payload01.firstName__c default "",
+	lastName: payload01.lastName__c default "",
+	address: payload01.address__c default "",
+	email: payload01.email__c default "",
+	phone: payload01.phone__c default ""
+}]]></ee:set-payload>
+            </ee:message>
+        </ee:transform>
+		<logger level="INFO" message="get:\customers:mt-config" />
+    </flow>
+    <flow name="get:\orders:mt-config">
+		<salesforce:query doc:name="Query" doc:id="0dbaf11a-0452-46d6-98e1-f24012d25eb4" config-ref="Salesforce_Config">
+            <salesforce:salesforce-query><![CDATA[SELECT poNumber__c, signatureRequiredFlag__c, shipInstructions__c, giftWrapFlag__c, giftWrapMessage__c,
+currencyCode__c, subTotal__c, customerId__c FROM Order__c]]></salesforce:salesforce-query>
+        </salesforce:query>
+		<ee:transform doc:name="Transform Message" doc:id="f125df3e-b601-4502-9d14-961ccb19bb66">
+            <ee:message>
+                <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+payload map () -> {
+	poNumber: $.poNumber__c default 0,
+	signatureRequiredFlag: $.signatureRequiredFlag__c default true,
+	shipInstructions: $.shipInstructions__c default "",
+	giftWrapFlag: $.giftWrapFlag__c default true,
+	giftWrapMessage: $.giftWrapMessage__c default "",
+	currencyCode: $.currencyCode__c default "",
+	subTotal: $.subTotal__c default 0,
+	customerId: $.customerId__c default ""
+}]]></ee:set-payload>
+            </ee:message>
+        </ee:transform>
+		<logger level="INFO" message="get:\orders:mt-config" />
+    </flow>
+	<flow name="get:\items:mt-config">
+		<salesforce:query doc:name="Query" doc:id="61928d10-a924-4d68-b377-6dd1e7c7ca16" config-ref="Salesforce_Config">
+			<salesforce:salesforce-query ><![CDATA[SELECT id, category__c, size__c, quantity__c, order__c FROM Item__c]]></salesforce:salesforce-query>
+		</salesforce:query>
+		<ee:transform doc:name="Transform Message" doc:id="949de731-bcbc-4d2a-9bda-21fa84794c3c">
+            <ee:message>
+                <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+payload map ( payload01 , indexOfPayload01 ) -> {
+	id: payload01.Id default "",
+	quantity: payload01.quantity__c default 0,
+	size: payload01.size__c default "",
+	orderId: payload01.Order__c default "",
+	category: payload01.category__c default ""
+}]]></ee:set-payload>
+            </ee:message>
+        </ee:transform>
+		<logger level="INFO" message="get:\items:mt-config" />
+    </flow>
+    <flow name="post:\customers:application\json:mt-config">
+		<ee:transform doc:id="fe3d4cca-84c5-4292-9307-75ed3cc0d818">
+            <ee:message>
+                <ee:set-payload><![CDATA[%dw 2.0
+output application/java
+---
+[{
+	address__c: payload.address,
+	firstName__c: payload.firstName,
+	lastName__c: payload.lastName,
+	email__c: payload.email,
+	phone__c: payload.number
+}]]]></ee:set-payload>
+            </ee:message>
+        </ee:transform>
+		<salesforce:create doc:name="Create" doc:id="b9cb81cc-be0c-4a31-af14-e6d6a8987038" type="Customer__c" config-ref="Salesforce_Config" />
+		<ee:transform doc:name="Customer ID" doc:id="0e684831-29d2-4ee9-9154-eaac9ca52c86" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	message: payload.items[0].payload.id
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<choice doc:name="is Created ?" doc:id="23ce9687-006e-4dc4-8459-ba96440bcbb6" >
+			<when expression="#[payload.message == null]">
+				<raise-error doc:name="Creation Failed" doc:id="05433029-f1f9-44bf-948f-1409d8442d00" type="SF:NOT_CREATED" description="There was an error creating the customer."/>
+			</when>
+		</choice>
+		<error-handler >
+			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="ab788669-be4b-46b8-9208-3e3c70cc7a25" >
+				<set-variable value="400" doc:name="httpStatus" doc:id="ce5f0771-5d54-4d87-9e38-dd12cc37ff0b" variableName="httpStatus"/>
+				<ee:transform doc:name="Transform Message" doc:id="8ec45635-cc10-4465-8c03-441feabbe1cd" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"message":	"There was an error creating the customer."
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+			</on-error-propagate>
+		</error-handler>
+    </flow>
+    <flow name="post:\orders:application\json:mt-config">
+		<ee:transform doc:name="Transform Message" doc:id="944848f2-d9f1-4226-abac-a931914726c1">
+            <ee:message>
+                <ee:set-payload><![CDATA[%dw 2.0
+output application/java
+---
+[{
+	poNumber__c: payload.poNumber as Number,
+	signatureRequiredFlag__c: payload.signatureRequiredFlag,
+	currencyCode__c: payload.currencyCode,
+	giftWrapFlag__c: payload.giftWrapFlag,
+	giftWrapMessage__c: payload.giftWrapMessage,
+	shipInstructions__c: payload.shipInstructions,
+	signatureRequiredFlag__c: payload.signatureRequiredFlag,
+	subTotal__c: payload.subTotal,
+	customerId__c: payload.customerId
+}]]]></ee:set-payload>
+            </ee:message>
+        </ee:transform>
+		<salesforce:create type="Order__c" doc:name="Create" doc:id="9971e342-b175-4efb-a537-c0e9c78b60d0" config-ref="Salesforce_Config" />
+		<ee:transform doc:name="Order ID" doc:id="6e2e7810-c65e-489c-8322-e815be52b44d">
+            <ee:message>
+                <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+	message: payload.items[0].payload.id
+}]]></ee:set-payload>
+            </ee:message>
+        </ee:transform>
+		<choice doc:name="is Created ?" doc:id="5ddc24c9-9596-4102-a989-a6efa8a4e5ee" >
+			<when expression="#[payload.message == null]">
+				<raise-error doc:name="Creation failed" doc:id="9afc1fe8-03b9-4c9a-b657-b7e41df5996f" description="There was an error creating the Order. Probably a duplicate poNumber." type="SF:NOT_CREATED"/>
+			</when>
+		</choice>
+		<error-handler >
+			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="c5552b8a-58cc-4420-a9e7-2dd88f4c94ea" type="ANY">
+				<ee:transform doc:name="Transform Message" doc:id="b664ea7a-0172-49fa-96ed-d7efe9ff87b9" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"message":	"There was an error creating the order."
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+				<set-variable value="400" doc:name="httpStatus" doc:id="1b85d790-662f-457e-bf61-a1e8207bb5bb" variableName="httpStatus" />
+			</on-error-propagate>
+		</error-handler>
+    </flow>
+    <flow name="post:\items:application\json:mt-config">
+		<ee:transform doc:id="aaab2aba-d188-4a70-9665-59938c49bb68">
+            <ee:message>
+                <ee:set-payload><![CDATA[%dw 2.0
+output application/java
+---
+[{
+	category__c: payload.category,
+	id__c: payload.id,
+	quantity__c: payload.quantity,
+	size__c: payload.size,
+	Order__c: payload.orderId
+}]]]></ee:set-payload>
+            </ee:message>
+        </ee:transform>
+		<salesforce:create type="Item__c" doc:name="Create" doc:id="93408886-02ba-465e-b066-22738a9a542c" config-ref="Salesforce_Config" />
+		<ee:transform doc:name="Item ID" doc:id="6c63ed1e-1dbe-424d-979b-792d6db25fcb" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	message: payload.items[0].payload.id
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<choice doc:name="is Created ?" doc:id="2eafd23c-fd25-4e4b-ab5c-dee07c1f204e">
+			<when expression="#[payload.message == null]">
+				<raise-error doc:name="Creation failed" doc:id="02f95e98-39ab-4c4d-9e87-043dbcfa7363" type="SF:NOT_CREATED" description="There was an error creating the Item." />
+			</when>
+		</choice>
+		<error-handler >
+			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="50bf035a-393b-4a2a-9468-5533efbd757e" >
+				<ee:transform doc:name="Transform Message" doc:id="ebfca8b7-9aa5-483d-b7b1-19e1764ae5c7" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"message":	"There was an error creating the item."
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+				<set-variable value="400" doc:name="httpStatus" doc:id="52aea4e6-2476-4a93-832d-d4ebc29f4f42" variableName="httpStatus" />
+			</on-error-propagate>
+		</error-handler>
+    </flow>
+</mule>
